@@ -7,12 +7,18 @@ class BacktestEngine:
     Deterministic wealth-based backtest simulation engine.
     Calculates exact wealth trajectory, position changes, turnover, and transaction costs.
 
-    Execution Timeline:
-    - Features available up to t Close.
-    - Prediction generated after t Close -> target exposure w_t for session t+1.
-    - Position entered at Open[t+1] and held through Close[t+1].
-    - Executable return R_{exec, t+1} = Close[t+1] / Open[t+1] - 1.
-    - Overnight gap (Open[t+1] / Close[t] - 1) is NOT credited to the position.
+    Execution Timeline & Holding Models:
+    1. 'open_to_close' (default intraday session model):
+       - Position entered at Open[t+1] and exited at Close[t+1].
+       - Executable return R_{exec, t+1} = Close[t+1] / Open[t+1] - 1.
+       - Overnight gap (Open[t+1] / Close[t] - 1) is NOT credited to the position.
+       - Since position is closed at Close[t+1] every day, each active intraday trade
+         incurs roundtrip transaction costs (entry turn at Open[t+1] and exit turn at Close[t+1],
+         total turnover = 2 * |target_exposure| per session).
+    2. 'close_to_close' (continuous holding model):
+       - Position entered at Close[t] (or Open[t+1]) and held continuously across sessions.
+       - Transaction costs are charged only on exposure changes across sessions
+         (turnover = |target_exposure_t - target_exposure_{t-1}|).
     """
 
     def __init__(
@@ -21,13 +27,17 @@ class BacktestEngine:
         slippage_pct: float = 0.0000,
         fixed_commission: float = 0.0,
         initial_wealth: float = 1.0,
-        use_log_return: bool = False
+        use_log_return: bool = False,
+        holding_model: str = "open_to_close"
     ):
         self.transaction_cost_pct = transaction_cost_pct
         self.slippage_pct = slippage_pct
         self.fixed_commission = fixed_commission
         self.initial_wealth = initial_wealth
         self.use_log_return = use_log_return
+        if holding_model not in ("open_to_close", "close_to_close"):
+            raise ValueError(f"Unknown holding_model: {holding_model}. Must be 'open_to_close' or 'close_to_close'.")
+        self.holding_model = holding_model
 
     def run_backtest(
         self,
@@ -46,8 +56,10 @@ class BacktestEngine:
 
         # Ensure return column exists if Open and Close available
         if return_col not in res.columns:
-            if 'Next_Log_Return' in res.columns:
+            if self.use_log_return and 'Next_Log_Return' in res.columns:
                 res[return_col] = res['Next_Log_Return']
+            elif not self.use_log_return and 'Next_Simple_Return' in res.columns:
+                res[return_col] = res['Next_Simple_Return']
             elif 'Next_Executable_Return' in res.columns:
                 res[return_col] = res['Next_Executable_Return']
             elif 'Open' in res.columns and 'Close' in res.columns:
@@ -94,8 +106,14 @@ class BacktestEngine:
             else:
                 simple_r_exec = float(r_exec)
 
-            # Turnover based on change in target exposure
-            pos_change = abs(target_exposure - prev_exposure)
+            # Turnover and position change calculation according to holding model
+            if self.holding_model == "open_to_close":
+                # Intraday session trade: entry turn at Open + exit turn at Close = 2 * |exposure|
+                pos_change = 2.0 * abs(target_exposure)
+            else:
+                # Continuous position holding across sessions
+                pos_change = abs(target_exposure - prev_exposure)
+
             position_changes[i] = pos_change
 
             if pos_change > 1e-6:

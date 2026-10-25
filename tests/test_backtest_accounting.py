@@ -6,13 +6,13 @@ from agent_x.backtest import BacktestEngine
 def test_backtest_costs_applied_on_turnover_only():
     dates = pd.date_range("2023-01-01", periods=5)
     df = pd.DataFrame({
-        "Next_Log_Return": [0.01, 0.02, -0.01, 0.01, 0.02]
+        "Next_Executable_Return": [0.01, 0.02, -0.01, 0.01, 0.02]
     }, index=dates)
 
     # Signal: Hold position for 3 days (1, 1, 1), then Cash (0, 0)
     signals = pd.Series([1, 1, 1, 0, 0], index=dates)
 
-    engine = BacktestEngine(transaction_cost_pct=0.0010)
+    engine = BacktestEngine(transaction_cost_pct=0.0010, holding_model="close_to_close")
     res = engine.run_backtest(df, signals)
 
     # Day 1: Entry -> Turnover = 1.0 -> Cost = 0.0010
@@ -35,6 +35,32 @@ def test_backtest_costs_applied_on_turnover_only():
     assert res.iloc[4]['Position_Change'] == 0.0
     assert res.iloc[4]['Cost'] == 0.0000
 
+def test_open_to_close_roundtrip_turnover_costs():
+    """
+    Test that open_to_close intraday execution charges entry and exit turnover per session (turnover = 2 * exposure).
+    """
+    dates = pd.date_range("2023-01-01", periods=3)
+    df = pd.DataFrame({
+        "Next_Executable_Return": [0.01, 0.02, 0.00]
+    }, index=dates)
+
+    signals = pd.Series([1, 1, 0], index=dates)
+
+    engine = BacktestEngine(transaction_cost_pct=0.0010, holding_model="open_to_close")
+    res = engine.run_backtest(df, signals)
+
+    # Day 1: Target Exposure 1 -> Intraday roundtrip cost = 2.0 * 0.0010 = 0.0020
+    assert abs(res.iloc[0]['Position_Change'] - 2.0) < 1e-7
+    assert abs(res.iloc[0]['Cost'] - 0.0020) < 1e-7
+
+    # Day 2: Target Exposure 1 -> Intraday roundtrip cost = 2.0 * 0.0010 = 0.0020
+    assert abs(res.iloc[1]['Position_Change'] - 2.0) < 1e-7
+    assert abs(res.iloc[1]['Cost'] - 0.0020) < 1e-7
+
+    # Day 3: Target Exposure 0 -> Cash, no intraday trade -> Cost = 0.0
+    assert res.iloc[2]['Position_Change'] == 0.0
+    assert res.iloc[2]['Cost'] == 0.0
+
 def test_missing_execution_return_resets_exposure_for_costs():
     """
     Test Phase A: When execution return is missing (valid_mask is False),
@@ -51,7 +77,7 @@ def test_missing_execution_return_resets_exposure_for_costs():
     # Day 3: Signal 1 (Hold Long) -> Turnover 0.0, Cost 0.0000
     signals = pd.Series([1, 1, 1, 1], index=dates)
 
-    engine = BacktestEngine(transaction_cost_pct=0.0010)
+    engine = BacktestEngine(transaction_cost_pct=0.0010, holding_model="close_to_close")
     res = engine.run_backtest(df, signals)
 
     assert abs(res.iloc[0]['Cost'] - 0.0010) < 1e-7

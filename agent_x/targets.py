@@ -20,11 +20,17 @@ class TargetBuilder:
     def add_directional_target(
         df: pd.DataFrame,
         execution_convention: str = "open_to_close",
-        use_log_return: bool = True
+        use_log_return: bool = False
     ) -> pd.DataFrame:
         """
         Calculates future return for execution on day t+1 and creates binary target label.
         Excludes observations with missing future execution prices / labels.
+
+        Default `use_log_return` is False to match simple return convention across
+        BacktestEngine and PerformanceMetrics.
+
+        Explicitly computes both `Next_Simple_Return` and `Next_Log_Return`, and sets
+        `Next_Executable_Return` according to `use_log_return`.
         """
         df = df.copy()
 
@@ -33,22 +39,23 @@ class TargetBuilder:
             next_open = df['Open'].shift(-1)
             next_close = df['Close'].shift(-1)
 
-            if use_log_return:
-                df['Next_Executable_Return'] = np.log(next_close / next_open)
-            else:
-                df['Next_Executable_Return'] = (next_close / next_open) - 1.0
+            simple_ret = (next_close / next_open) - 1.0
+            log_ret = np.log(next_close / next_open)
 
         elif execution_convention == "close_to_close" or 'Open' not in df.columns:
             # Position held Close[t] to Close[t+1]
-            if use_log_return:
-                df['Next_Executable_Return'] = np.log(df['Close'].shift(-1) / df['Close'])
-            else:
-                df['Next_Executable_Return'] = (df['Close'].shift(-1) / df['Close']) - 1.0
+            simple_ret = (df['Close'].shift(-1) / df['Close']) - 1.0
+            log_ret = np.log(df['Close'].shift(-1) / df['Close'])
         else:
             raise ValueError(f"Unknown execution convention: {execution_convention}")
 
-        # Backward compatibility alias
-        df['Next_Log_Return'] = df['Next_Executable_Return']
+        df['Next_Simple_Return'] = simple_ret
+        df['Next_Log_Return'] = log_ret
+
+        if use_log_return:
+            df['Next_Executable_Return'] = df['Next_Log_Return']
+        else:
+            df['Next_Executable_Return'] = df['Next_Simple_Return']
 
         # Binary Direction Target: 1 if Next_Executable_Return > 0 else 0
         # Exclude observations where future label is NaN
