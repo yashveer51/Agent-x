@@ -42,17 +42,30 @@ class ExperimentTracker:
         md.append("Agent X evaluates machine learning stock predictions using chronological walk-forward validation and realistic transaction costs under Open-to-Close execution timing.\n")
 
         md.append("## Out-of-Sample Performance Summary\n")
-        md.append("| Asset | Model | Gross Return | Net Return | Benchmark Net | Sharpe Ratio | Sharpe 95% CI | Max Drawdown | Total Costs |")
-        md.append("|---|---|---|---|---|---|---|---|---|")
+        md.append("| Asset | Model | Gross Return | Net Return | Benchmark Net (Executable) | Benchmark Frictionless | Sharpe Ratio | Sharpe 95% CI | Max Drawdown | Total Costs |")
+        md.append("|---|---|---|---|---|---|---|---|---|---|")
 
         for res in summary_results:
             ci = res.get('sharpe_ci', (np.nan, np.nan))
             ci_str = f"[{ci[0]:.2f}, {ci[1]:.2f}]" if not np.isnan(ci[0]) else "N/A"
-            bm_ret = res.get('benchmark_net_return', res.get('benchmark_return', 0.0))
+            bm_net = res.get('benchmark_net_return', 0.0)
+            bm_fric = res.get('benchmark_frictionless_return', 0.0)
             md.append(
                 f"| {res['symbol']} | {res['model']} | {res['gross_return']:.2%} | {res['net_return']:.2%} | "
-                f"{bm_ret:.2%} | {res['sharpe_ratio']:.2f} | {ci_str} | {res['max_drawdown']:.2%} | {res['total_costs']:.4f} |"
+                f"{bm_net:.2%} | {bm_fric:.2%} | {res['sharpe_ratio']:.2f} | {ci_str} | {res['max_drawdown']:.2%} | {res['total_costs']:.4f} |"
             )
+
+        # Isolated Holdout Section if holdout results are present
+        holdout_results = [r for r in summary_results if 'holdout_net_return' in r]
+        if holdout_results:
+            md.append("\n## Final Isolated Holdout Performance Summary\n")
+            md.append("| Asset | Model | Holdout Net Return | Holdout Benchmark Net | Holdout Sharpe Ratio | Holdout Max Drawdown |")
+            md.append("|---|---|---|---|---|---|")
+            for res in holdout_results:
+                md.append(
+                    f"| {res['symbol']} | {res['model']} | {res['holdout_net_return']:.2%} | "
+                    f"{res['holdout_bm_net_return']:.2%} | {res['holdout_sharpe_ratio']:.2f} | {res['holdout_max_drawdown']:.2%} |"
+                )
 
         md.append("\n## Audit & Research Conclusion\n")
 

@@ -23,11 +23,12 @@ class PerformanceMetrics:
         if len(returns) == 0:
             return {}
 
-        returns_clean = returns.fillna(0.0)
+        returns_clean = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0)
 
         if wealth is not None and len(wealth) > 0:
-            total_return = float((wealth.iloc[-1] / initial_wealth) - 1.0)
-            wealth_array = np.insert(wealth.values, 0, initial_wealth)
+            wealth_clean = wealth.replace([np.inf, -np.inf], np.nan).fillna(initial_wealth)
+            total_return = float((wealth_clean.iloc[-1] / initial_wealth) - 1.0)
+            wealth_array = np.insert(wealth_clean.values, 0, initial_wealth)
             peaks = np.maximum.accumulate(wealth_array)
             drawdowns = (wealth_array - peaks) / peaks
             max_drawdown = float(np.min(drawdowns))
@@ -50,25 +51,16 @@ class PerformanceMetrics:
         else:
             ann_return = -1.0
 
-        if is_log_return:
-            std_dev = returns_clean.std()
-            ann_vol = float(std_dev * np.sqrt(252))
-            mean_ret = returns_clean.mean()
-            sharpe = float((mean_ret * 252) / (ann_vol + 1e-10)) if ann_vol > 1e-8 else 0.0
+        mean_ret = float(returns_clean.mean()) if n_periods > 0 else 0.0
+        std_dev = float(returns_clean.std(ddof=1)) if n_periods > 1 else 0.0
+        ann_vol = float(std_dev * np.sqrt(252))
 
-            neg_rets = returns_clean[returns_clean < 0]
-            downside_std = neg_rets.std() if len(neg_rets) > 1 else 0.0
-            downside_vol = float(downside_std * np.sqrt(252))
-            sortino = float((mean_ret * 252) / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
-        else:
-            std_dev = returns_clean.std()
-            ann_vol = float(std_dev * np.sqrt(252))
-            sharpe = float(ann_return / (ann_vol + 1e-10)) if ann_vol > 1e-8 else 0.0
+        sharpe = float((mean_ret * 252) / (ann_vol + 1e-10)) if ann_vol > 1e-8 else 0.0
 
-            neg_rets = returns_clean[returns_clean < 0]
-            downside_std = neg_rets.std() if len(neg_rets) > 1 else 0.0
-            downside_vol = float(downside_std * np.sqrt(252))
-            sortino = float(ann_return / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
+        downside_diff = np.minimum(returns_clean.values, 0.0)
+        downside_dev = float(np.sqrt(np.mean(downside_diff ** 2))) if n_periods > 0 else 0.0
+        downside_vol = float(downside_dev * np.sqrt(252))
+        sortino = float((mean_ret * 252) / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
 
         total_cost = float(costs.sum()) if costs is not None else 0.0
 

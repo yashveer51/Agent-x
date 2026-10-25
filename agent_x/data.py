@@ -94,10 +94,16 @@ class DataFetcher:
         if invalid_prices.any():
             df = df[~invalid_prices]
 
-        # Sanity check: High >= Low
-        invalid_hl = df['High'] < df['Low']
-        if invalid_hl.any():
-            df = df[~invalid_hl]
+        # Sanity check: OHLC logical boundaries (High >= Low, High >= Open, High >= Close, Low <= Open, Low <= Close)
+        invalid_ohlc = (
+            (df['High'] < df['Low']) |
+            (df['High'] < df['Open']) |
+            (df['High'] < df['Close']) |
+            (df['Low'] > df['Open']) |
+            (df['Low'] > df['Close'])
+        )
+        if invalid_ohlc.any():
+            df = df[~invalid_ohlc]
 
         if df.empty:
             raise ValueError(f"Data for symbol '{symbol}' contained no valid price observations after filtering.")

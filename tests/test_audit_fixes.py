@@ -99,3 +99,41 @@ def test_bootstrap_sharpe_ci_reproducible():
     ci2 = PerformanceMetrics.block_bootstrap_sharpe_ci(returns, random_seed=42)
     assert ci1 == ci2
     assert not np.isnan(ci1[0])
+
+def test_investable_benchmark_costs_deducted():
+    """
+    Test Phase C: Verify that an investable benchmark deducts transaction costs on entry.
+    """
+    dates = pd.date_range("2023-01-01", periods=3)
+    df = pd.DataFrame({
+        "Next_Executable_Return": [0.05, 0.02, 0.01]
+    }, index=dates)
+
+    signals = pd.Series([1.0, 1.0, 1.0], index=dates)
+
+    engine_investable = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=1.0)
+    engine_frictionless = BacktestEngine(transaction_cost_pct=0.0000, initial_wealth=1.0)
+
+    res_inv = engine_investable.run_backtest(df, signals)
+    res_fric = engine_frictionless.run_backtest(df, signals)
+
+    # Investable benchmark must incur cost on day 0
+    assert abs(res_inv.iloc[0]['Cost'] - 0.0010) < 1e-7
+    assert res_fric.iloc[0]['Cost'] == 0.0
+    assert res_inv.iloc[-1]['Wealth'] < res_fric.iloc[-1]['Wealth']
+
+def test_holdout_set_retrieval_isolation():
+    """
+    Test Phase D: Verify holdout set is strictly isolated from walk-forward folds.
+    """
+    dates = pd.date_range("2020-01-01", periods=1000)
+    df = pd.DataFrame({"Value": np.arange(1000)}, index=dates)
+
+    validator = WalkForwardValidator(min_train_size=500, test_size=100, step_size=100, purge_gap=1, holdout_size=150)
+    holdout = validator.get_holdout(df)
+
+    assert len(holdout) == 150
+    assert holdout.index.min() == df.index[850]
+
+    for train_df, test_df, fold in validator.split(df):
+        assert test_df.index.max() < holdout.index.min()

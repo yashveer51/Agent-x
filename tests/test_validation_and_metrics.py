@@ -27,3 +27,25 @@ def test_financial_metrics_zero_volatility():
     assert metrics['annualized_return'] == 0.0
     assert metrics['sharpe_ratio'] == 0.0
     assert metrics['max_drawdown'] == 0.0
+
+def test_sharpe_and_sortino_formulas():
+    # Hand-crafted example:
+    # returns = [0.01, -0.01, 0.02, -0.005]
+    # mean = (0.01 - 0.01 + 0.02 - 0.005) / 4 = 0.015 / 4 = 0.00375
+    # std (ddof=1) of [0.01, -0.01, 0.02, -0.005]
+    # downside diff = [0, -0.01, 0, -0.005] -> sq = [0, 0.0001, 0, 0.000025] -> mean = 0.000125 / 4 = 0.00003125
+    # downside dev = sqrt(0.00003125) = 0.00559016994
+    returns = pd.Series([0.01, -0.01, 0.02, -0.005])
+    metrics = PerformanceMetrics.calculate_financial_metrics(returns)
+
+    mean_ret = returns.mean() # 0.00375
+    std_ret = returns.std(ddof=1)
+    ann_vol = std_ret * np.sqrt(252)
+    expected_sharpe = (mean_ret * 252) / ann_vol
+
+    downside_sq_mean = np.mean([0.0, (-0.01)**2, 0.0, (-0.005)**2])
+    expected_downside_vol = np.sqrt(downside_sq_mean) * np.sqrt(252)
+    expected_sortino = (mean_ret * 252) / expected_downside_vol
+
+    assert abs(metrics['sharpe_ratio'] - expected_sharpe) < 1e-5
+    assert abs(metrics['sortino_ratio'] - expected_sortino) < 1e-5

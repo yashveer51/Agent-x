@@ -83,6 +83,7 @@ class BacktestEngine:
                 gross_returns[i] = 0.0
                 costs[i] = 0.0
                 position_changes[i] = 0.0
+                prev_exposure = 0.0
                 continue
 
             target_exposure = res['Target_Exposure'].iloc[i]
