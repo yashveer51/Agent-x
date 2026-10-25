@@ -19,19 +19,26 @@ class PerformanceMetrics:
         """
         Calculates comprehensive financial performance metrics.
         Includes initial portfolio wealth W_0 in peak calculation for Maximum Drawdown.
+
+        Missing observations (NaN) and infinite values (inf/-inf) are explicitly dropped
+        from returns, wealth, and costs series so they are not silently treated as zero-return periods.
         """
-        if len(returns) == 0:
+        returns_clean = returns.replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(returns_clean) == 0:
             return {}
 
-        returns_clean = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
         if wealth is not None and len(wealth) > 0:
-            wealth_clean = wealth.replace([np.inf, -np.inf], np.nan).fillna(initial_wealth)
-            total_return = float((wealth_clean.iloc[-1] / initial_wealth) - 1.0)
-            wealth_array = np.insert(wealth_clean.values, 0, initial_wealth)
-            peaks = np.maximum.accumulate(wealth_array)
-            drawdowns = (wealth_array - peaks) / peaks
-            max_drawdown = float(np.min(drawdowns))
+            wealth_clean = wealth.replace([np.inf, -np.inf], np.nan).dropna()
+            if len(wealth_clean) == 0:
+                total_return = 0.0
+                max_drawdown = 0.0
+            else:
+                total_return = float((wealth_clean.iloc[-1] / initial_wealth) - 1.0)
+                wealth_array = np.insert(wealth_clean.values, 0, initial_wealth)
+                peaks = np.maximum.accumulate(wealth_array)
+                drawdowns = (wealth_array - peaks) / peaks
+                max_drawdown = float(np.min(drawdowns))
         else:
             if is_log_return:
                 total_return = float(np.exp(returns_clean.sum()) - 1.0)
@@ -62,7 +69,11 @@ class PerformanceMetrics:
         downside_vol = float(downside_dev * np.sqrt(252))
         sortino = float((mean_ret * 252) / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
 
-        total_cost = float(costs.sum()) if costs is not None else 0.0
+        if costs is not None:
+            costs_clean = costs.replace([np.inf, -np.inf], np.nan).dropna()
+            total_cost = float(costs_clean.sum())
+        else:
+            total_cost = 0.0
 
         return {
             'total_return': total_return,
@@ -84,8 +95,13 @@ class PerformanceMetrics:
         """
         Reproducible block bootstrap confidence interval for Sharpe ratio.
         Returns (np.nan, np.nan) if sample size is insufficient.
+
+        Missing observations (NaN) and infinite values (inf/-inf) are explicitly dropped
+        prior to bootstrapping.
         """
-        if len(returns) < block_size * 2:
+        clean_rets_series = returns.replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(clean_rets_series) < block_size * 2:
             return (np.nan, np.nan)
 
         if random_seed is not None:
@@ -93,7 +109,7 @@ class PerformanceMetrics:
         else:
             rng = np.random.RandomState()
 
-        clean_rets = returns.fillna(0.0).values
+        clean_rets = clean_rets_series.values
         n = len(clean_rets)
         sharpes = []
 

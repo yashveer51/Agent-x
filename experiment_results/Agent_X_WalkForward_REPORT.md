@@ -1,19 +1,19 @@
 # Agent X Quantitative Research Report: Agent_X_WalkForward
 
-**Generated Date**: 2026-10-25 03:38:38
+**Generated Date**: 2026-10-25 10:44:19
 
 ## Executive Summary
 
-Agent X evaluates machine learning stock predictions using chronological walk-forward validation and realistic transaction costs.
+Agent X evaluates machine learning stock predictions using chronological walk-forward validation and realistic transaction costs under Open-to-Close execution timing.
 
 ## Out-of-Sample Performance Summary
 
-| Asset | Model | Gross Return | Net Return | Sharpe Ratio | Sharpe 95% CI | Max Drawdown | Total Costs |
-|---|---|---|---|---|---|---|---|
-| AAPL | Random Forest | 65.90% | 39.82% | 0.36 | [-0.76, 1.40] | -44.64% | 0.1710 |
-| MSFT | Random Forest | 136.52% | 101.35% | 0.70 | [-0.09, 1.81] | -31.85% | 0.1610 |
-| SPY | Random Forest | 61.73% | 40.60% | 0.45 | [-0.14, 1.63] | -24.76% | 0.1400 |
+| Asset | Model | Gross Return | Net Return | Benchmark Net (Executable) | Benchmark Frictionless | Sharpe Ratio | Sharpe 95% CI | Max Drawdown | Total Costs |
+|---|---|---|---|---|---|---|---|---|---|
+| AAPL | Random Forest | 76.65% | -11.39% | 0.00% | 0.00% | -0.88 | [-2.03, -0.00] | -40.77% | 1.3760 |
+| MSFT | Random Forest | 18.63% | -13.63% | 0.00% | 0.00% | -1.26 | [-2.30, -0.46] | -38.27% | 1.1460 |
+| SPY | Random Forest | 23.63% | -14.93% | 0.00% | 0.00% | -2.42 | [-3.49, -1.74] | -28.29% | 1.4320 |
 
 ## Audit & Research Conclusion
 
-**Classification**: **Insufficient evidence**: Performance is marginal or statistically indistinguishable from zero.
+**Classification**: **No demonstrated edge after transaction costs**: Friction costs, realistic execution timing, and market noise eliminate directional predictive advantages.

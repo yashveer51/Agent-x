@@ -1,0 +1,247 @@
+{
+  "results": [
+    {
+      "symbol": "AAPL",
+      "model": "random_forest",
+      "gross_return": 0.7665458378298908,
+      "net_return": -0.5544080702705955,
+      "benchmark_net_return": -0.628916355567857,
+      "benchmark_frictionless_return": 1.1391842221266808,
+      "sharpe_ratio": -0.8802257957314051,
+      "sharpe_ci": [
+        -2.0277295680856144,
+        -0.002796504119466122
+      ],
+      "max_drawdown": -0.5973269581303539,
+      "total_costs": 1.3760000000000003,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.1213554640885911,
+      "holdout_bm_net_return": -0.17918948954878855,
+      "holdout_sharpe_ratio": -0.6693594700376413,
+      "holdout_max_drawdown": -0.2436458527548236
+    },
+    {
+      "symbol": "AAPL",
+      "model": "logistic_regression",
+      "gross_return": 1.001260302740734,
+      "net_return": -0.489103722038724,
+      "benchmark_net_return": -0.628916355567857,
+      "benchmark_frictionless_return": 1.1391842221266808,
+      "sharpe_ratio": -0.7886538523236484,
+      "sharpe_ci": [
+        -1.9912180431322986,
+        0.17732744193211694
+      ],
+      "max_drawdown": -0.5753428618166285,
+      "total_costs": 1.3640000000000003,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.1654025164569165,
+      "holdout_bm_net_return": -0.17918948954878855,
+      "holdout_sharpe_ratio": -0.9053796284870138,
+      "holdout_max_drawdown": -0.2851021660553362
+    },
+    {
+      "symbol": "AAPL",
+      "model": "majority_class",
+      "gross_return": 1.1391842221266808,
+      "net_return": -0.628916355567857,
+      "benchmark_net_return": -0.628916355567857,
+      "benchmark_frictionless_return": 1.1391842221266808,
+      "sharpe_ratio": -0.9642502801128602,
+      "sharpe_ci": [
+        -2.1770990863795228,
+        0.07129272312951943
+      ],
+      "max_drawdown": -0.7023187575731196,
+      "total_costs": 1.7500000000000007,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.17918948954878855,
+      "holdout_bm_net_return": -0.17918948954878855,
+      "holdout_sharpe_ratio": -0.9904099804087357,
+      "holdout_max_drawdown": -0.29691178373856975
+    },
+    {
+      "symbol": "MSFT",
+      "model": "random_forest",
+      "gross_return": 0.1863085995277458,
+      "net_return": -0.6232980778155296,
+      "benchmark_net_return": -0.7388192541398824,
+      "benchmark_frictionless_return": 0.505627475234663,
+      "sharpe_ratio": -1.261249845325644,
+      "sharpe_ci": [
+        -2.297578349760051,
+        -0.4631723951530467
+      ],
+      "max_drawdown": -0.6529771102496327,
+      "total_costs": 1.1460000000000001,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.36819252779958045,
+      "holdout_bm_net_return": -0.40910905882081217,
+      "holdout_sharpe_ratio": -2.827476874275822,
+      "holdout_max_drawdown": -0.38421366741643215
+    },
+    {
+      "symbol": "MSFT",
+      "model": "logistic_regression",
+      "gross_return": 0.5228912717761371,
+      "net_return": -0.516419193467537,
+      "benchmark_net_return": -0.7388192541398824,
+      "benchmark_frictionless_return": 0.505627475234663,
+      "sharpe_ratio": -0.9515463663365611,
+      "sharpe_ci": [
+        -2.102543843854488,
+        -0.10714963061842489
+      ],
+      "max_drawdown": -0.6532237196368794,
+      "total_costs": 1.1460000000000001,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.3813933628242058,
+      "holdout_bm_net_return": -0.40910905882081217,
+      "holdout_sharpe_ratio": -2.8804332482482753,
+      "holdout_max_drawdown": -0.4122026467587097
+    },
+    {
+      "symbol": "MSFT",
+      "model": "majority_class",
+      "gross_return": 0.505627475234663,
+      "net_return": -0.7388192541398824,
+      "benchmark_net_return": -0.7388192541398824,
+      "benchmark_frictionless_return": 0.505627475234663,
+      "sharpe_ratio": -1.4493775584180786,
+      "sharpe_ci": [
+        -2.4090172713124964,
+        -0.7701505841073351
+      ],
+      "max_drawdown": -0.7631144944323704,
+      "total_costs": 1.7500000000000007,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      },
+      "holdout_net_return": -0.40910905882081217,
+      "holdout_bm_net_return": -0.40910905882081217,
+      "holdout_sharpe_ratio": -3.1194933023086673,
+      "holdout_max_drawdown": -0.43814405826454556
+    },
+    {
+      "symbol": "SPY",
+      "model": "random_forest",
+      "gross_return": 0.23629360064356808,
+      "net_return": -0.7051581123516186,
+      "benchmark_net_return": -0.7771503499179038,
+      "benchmark_frictionless_return": 0.28466037917563014,
+      "sharpe_ratio": -2.420904454384451,
+      "sharpe_ci": [
+        -3.494646388965964,
+        -1.7387558159885768
+      ],
+      "max_drawdown": -0.7213819593933058,
+      "total_costs": 1.4320000000000004,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1759
+      },
+      "holdout_net_return": -0.33492035022485833,
+      "holdout_bm_net_return": -0.38527228653737755,
+      "holdout_sharpe_ratio": -4.531927232053896,
+      "holdout_max_drawdown": -0.3416404186129498
+    },
+    {
+      "symbol": "SPY",
+      "model": "logistic_regression",
+      "gross_return": 0.23079570853051012,
+      "net_return": -0.7412516219237234,
+      "benchmark_net_return": -0.7771503499179038,
+      "benchmark_frictionless_return": 0.28466037917563014,
+      "sharpe_ratio": -2.6903381256792986,
+      "sharpe_ci": [
+        -3.772857643246331,
+        -2.023775176876148
+      ],
+      "max_drawdown": -0.7661296638964274,
+      "total_costs": 1.5580000000000005,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1759
+      },
+      "holdout_net_return": -0.3922855411107422,
+      "holdout_bm_net_return": -0.38527228653737755,
+      "holdout_sharpe_ratio": -5.207178460530868,
+      "holdout_max_drawdown": -0.3984259826737166
+    },
+    {
+      "symbol": "SPY",
+      "model": "majority_class",
+      "gross_return": 0.28466037917563014,
+      "net_return": -0.7771503499179038,
+      "benchmark_net_return": -0.7771503499179038,
+      "benchmark_frictionless_return": 0.28466037917563014,
+      "sharpe_ratio": -2.6214372505393695,
+      "sharpe_ci": [
+        -3.7515641258695376,
+        -1.9864563694112998
+      ],
+      "max_drawdown": -0.7975547109474881,
+      "total_costs": 1.7500000000000007,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1759
+      },
+      "holdout_net_return": -0.38527228653737755,
+      "holdout_bm_net_return": -0.38527228653737755,
+      "holdout_sharpe_ratio": -5.0112390927072585,
+      "holdout_max_drawdown": -0.39993903317034335
+    }
+  ]
+}

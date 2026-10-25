@@ -49,7 +49,7 @@ def test_missing_future_label_excluded_and_not_zero():
 
 def test_wealth_accounting_and_costs():
     """
-    Test Fix B: Detailed wealth accounting through Cash -> Entry -> Hold -> Exit -> Cash.
+    Test Fix B: Detailed wealth accounting through Cash -> Entry -> Hold -> Exit -> Cash in close_to_close mode.
     """
     dates = pd.date_range("2023-01-01", periods=5)
     df = pd.DataFrame({
@@ -59,7 +59,7 @@ def test_wealth_accounting_and_costs():
     # Signals: Day 0: Cash (0), Day 1: Enter Long (1), Day 2: Hold Long (1), Day 3: Exit to Cash (0), Day 4: Cash (0)
     signals = pd.Series([0, 1, 1, 0, 0], index=dates)
 
-    engine = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=100.0, use_log_return=False)
+    engine = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=100.0, use_log_return=False, holding_model="close_to_close")
     res = engine.run_backtest(df, signals)
 
     # Day 0: Cash (0) -> No cost, wealth = 100.0
@@ -79,6 +79,35 @@ def test_wealth_accounting_and_costs():
     # Day 3: Exit (1 -> 0) -> Cost = 0.0010 * 100.87902. Target Exposure = 0 -> Gross return = 0%.
     assert abs(res.iloc[3]['Position_Change'] - 1.0) < 1e-7
     assert abs(res.iloc[3]['Cost'] - 0.0010) < 1e-7
+
+def test_missing_and_infinite_values_in_metrics():
+    """
+    Test that calculate_financial_metrics and block_bootstrap_sharpe_ci properly ignore NaN and inf/-inf values.
+    """
+    returns = pd.Series([0.01, np.nan, np.inf, -0.02, -np.inf, 0.015, np.nan, 0.005])
+    metrics = PerformanceMetrics.calculate_financial_metrics(returns)
+
+    # Clean returns: [0.01, -0.02, 0.015, 0.005] -> total simple return = (1.01)*(0.98)*(1.015)*(1.005) - 1
+    expected_total_return = float(np.prod(1.0 + np.array([0.01, -0.02, 0.015, 0.005])) - 1.0)
+    assert abs(metrics['total_return'] - expected_total_return) < 1e-5
+
+    # Test bootstrap with NaNs and infs
+    rets_long = pd.Series(list(returns) * 10)
+    ci = PerformanceMetrics.block_bootstrap_sharpe_ci(rets_long, random_seed=42)
+    assert not np.isnan(ci[0])
+    assert not np.isnan(ci[1])
+
+def test_return_compounding_formulas_simple_vs_log():
+    """
+    Test consistency between simple return compounding (cumprod(1 + r)) and log return compounding (exp(cumsum(log_r))).
+    """
+    simple_rets = pd.Series([0.02, -0.01, 0.03, -0.015])
+    log_rets = np.log(1.0 + simple_rets)
+
+    cum_simple = np.cumprod(1.0 + simple_rets)
+    cum_log = np.exp(np.cumsum(log_rets))
+
+    np.testing.assert_allclose(cum_simple, cum_log, rtol=1e-6)
 
 def test_max_drawdown_includes_initial_wealth():
     """
@@ -111,13 +140,13 @@ def test_investable_benchmark_costs_deducted():
 
     signals = pd.Series([1.0, 1.0, 1.0], index=dates)
 
-    engine_investable = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=1.0)
-    engine_frictionless = BacktestEngine(transaction_cost_pct=0.0000, initial_wealth=1.0)
+    engine_investable = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=1.0, holding_model="close_to_close")
+    engine_frictionless = BacktestEngine(transaction_cost_pct=0.0000, initial_wealth=1.0, holding_model="close_to_close")
 
     res_inv = engine_investable.run_backtest(df, signals)
     res_fric = engine_frictionless.run_backtest(df, signals)
 
-    # Investable benchmark must incur cost on day 0
+    # Investable benchmark in continuous holding mode must incur cost on initial entry
     assert abs(res_inv.iloc[0]['Cost'] - 0.0010) < 1e-7
     assert res_fric.iloc[0]['Cost'] == 0.0
     assert res_inv.iloc[-1]['Wealth'] < res_fric.iloc[-1]['Wealth']
