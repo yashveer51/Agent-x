@@ -1,47 +1,135 @@
 import pandas as pd
 import numpy as np
+from typing import Optional, Dict, Any
 
 class BacktestEngine:
     """
-    Deterministic backtest simulation engine.
-    Calculates portfolio returns, turnover, and applies transaction costs on position changes.
+    Deterministic wealth-based backtest simulation engine.
+    Calculates exact wealth trajectory, position changes, turnover, and transaction costs.
+
+    Execution Timeline:
+    - Features available up to t Close.
+    - Prediction generated after t Close -> target exposure w_t for session t+1.
+    - Position entered at Open[t+1] and held through Close[t+1].
+    - Executable return R_{exec, t+1} = Close[t+1] / Open[t+1] - 1.
+    - Overnight gap (Open[t+1] / Close[t] - 1) is NOT credited to the position.
     """
 
-    def __init__(self, transaction_cost_pct: float = 0.0010):
+    def __init__(
+        self,
+        transaction_cost_pct: float = 0.0010,
+        slippage_pct: float = 0.0000,
+        fixed_commission: float = 0.0,
+        initial_wealth: float = 1.0,
+        use_log_return: bool = False
+    ):
         self.transaction_cost_pct = transaction_cost_pct
+        self.slippage_pct = slippage_pct
+        self.fixed_commission = fixed_commission
+        self.initial_wealth = initial_wealth
+        self.use_log_return = use_log_return
 
     def run_backtest(
         self,
         df: pd.DataFrame,
         signals: pd.Series,
-        return_col: str = "Next_Log_Return"
+        return_col: str = "Next_Executable_Return"
     ) -> pd.DataFrame:
         """
-        Run backtest on test dataframe with signals.
-        - Position: 1 for Long, 0 for Cash
-        - Turnover: |Position[t] - Position[t-1]|
-        - Cost: Turnover * transaction_cost_pct
-        - Net Return: Position * Next_Log_Return - Cost
+        Run wealth-consistent backtest on dataframe with signals.
         """
         res = df.copy()
-        res['Signal'] = signals.values
 
-        # Position held for day t+1
-        res['Position'] = res['Signal'].astype(float)
+        # Align signals
+        res['Signal'] = signals.reindex(res.index).fillna(0.0).values
+        res['Target_Exposure'] = res['Signal'].astype(float)
 
-        # Calculate position change (turnover)
-        res['Position_Change'] = res['Position'].diff().abs()
-        # Initial position entry cost
-        res['Position_Change'] = res['Position_Change'].fillna(res['Position'])
+        # Ensure return column exists if Open and Close available
+        if return_col not in res.columns:
+            if 'Next_Log_Return' in res.columns:
+                res[return_col] = res['Next_Log_Return']
+            elif 'Next_Executable_Return' in res.columns:
+                res[return_col] = res['Next_Executable_Return']
+            elif 'Open' in res.columns and 'Close' in res.columns:
+                next_open = res['Open'].shift(-1)
+                next_close = res['Close'].shift(-1)
+                if self.use_log_return:
+                    res[return_col] = np.log(next_close / next_open)
+                else:
+                    res[return_col] = (next_close / next_open) - 1.0
+            else:
+                raise ValueError(f"Return column '{return_col}' not found in dataframe and cannot be computed.")
 
-        # Transaction cost penalty
-        res['Cost'] = res['Position_Change'] * self.transaction_cost_pct
+        valid_mask = res[return_col].notna()
 
-        # Strategy Daily Return
-        res['Strategy_Return'] = (res['Position'] * res[return_col]) - res['Cost']
+        n = len(res)
+        wealth = np.zeros(n)
+        gross_wealth = np.zeros(n)
+        portfolio_returns = np.zeros(n)
+        gross_returns = np.zeros(n)
+        costs = np.zeros(n)
+        position_changes = np.zeros(n)
+        trades = np.zeros(n, dtype=int)
 
-        # Cumulative Growth
-        res['Cum_Market'] = np.exp(res[return_col].cumsum())
-        res['Cum_Strategy'] = np.exp(res['Strategy_Return'].cumsum())
+        current_wealth = self.initial_wealth
+        current_gross_wealth = self.initial_wealth
+        prev_exposure = 0.0
+
+        for i in range(n):
+            if not valid_mask.iloc[i]:
+                wealth[i] = current_wealth
+                gross_wealth[i] = current_gross_wealth
+                portfolio_returns[i] = 0.0
+                gross_returns[i] = 0.0
+                costs[i] = 0.0
+                position_changes[i] = 0.0
+                continue
+
+            target_exposure = res['Target_Exposure'].iloc[i]
+            r_exec = res[return_col].iloc[i]
+
+            if self.use_log_return:
+                simple_r_exec = float(np.exp(r_exec) - 1.0)
+            else:
+                simple_r_exec = float(r_exec)
+
+            # Turnover based on change in target exposure
+            pos_change = abs(target_exposure - prev_exposure)
+            position_changes[i] = pos_change
+
+            if pos_change > 1e-6:
+                trades[i] = 1
+
+            total_cost_pct = self.transaction_cost_pct + self.slippage_pct
+
+            # Cost in portfolio wealth units
+            trade_cost = (pos_change * total_cost_pct * current_wealth) + (self.fixed_commission if pos_change > 1e-6 else 0.0)
+            costs[i] = trade_cost / current_wealth if current_wealth > 0 else 0.0
+
+            gross_r = target_exposure * simple_r_exec
+            gross_returns[i] = gross_r
+            current_gross_wealth = current_gross_wealth * (1.0 + gross_r)
+            gross_wealth[i] = current_gross_wealth
+
+            net_wealth_start = max(0.0, current_wealth - trade_cost)
+            current_wealth = net_wealth_start * (1.0 + gross_r)
+            wealth[i] = current_wealth
+
+            prev_wealth = wealth[i-1] if i > 0 else self.initial_wealth
+            portfolio_returns[i] = (current_wealth - prev_wealth) / prev_wealth if prev_wealth > 0 else 0.0
+
+            prev_exposure = target_exposure
+
+        res['Position'] = res['Target_Exposure']
+        res['Position_Change'] = position_changes
+        res['Trade'] = trades
+        res['Cost'] = costs
+        res['Gross_Return'] = gross_returns
+        res['Strategy_Return'] = portfolio_returns
+        res['Wealth'] = wealth
+        res['Gross_Wealth'] = gross_wealth
+
+        res['Cum_Strategy'] = wealth / self.initial_wealth
+        res['Cum_Market'] = gross_wealth / self.initial_wealth
 
         return res

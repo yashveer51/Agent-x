@@ -1,35 +1,74 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Tuple
 
 class PerformanceMetrics:
     """
     Computes financial metrics (Return, Sharpe, Sortino, Drawdown, Turnover)
-    and classification metrics (Accuracy, Precision, Recall).
+    and statistical uncertainty intervals.
     """
 
     @staticmethod
-    def calculate_financial_metrics(log_returns: pd.Series, costs: pd.Series = None) -> Dict[str, Any]:
-        if len(log_returns) == 0:
+    def calculate_financial_metrics(
+        returns: pd.Series,
+        costs: Optional[pd.Series] = None,
+        wealth: Optional[pd.Series] = None,
+        is_log_return: bool = False,
+        initial_wealth: float = 1.0
+    ) -> Dict[str, Any]:
+        """
+        Calculates comprehensive financial performance metrics.
+        Includes initial portfolio wealth W_0 in peak calculation for Maximum Drawdown.
+        """
+        if len(returns) == 0:
             return {}
 
-        total_return = float(np.exp(log_returns.sum()) - 1.0)
-        ann_return = float(np.exp(log_returns.mean() * 252) - 1.0)
-        ann_vol = float(log_returns.std() * np.sqrt(252))
+        returns_clean = returns.fillna(0.0)
 
-        # Sharpe ratio
-        sharpe = float((log_returns.mean() * 252) / (ann_vol + 1e-10))
+        if wealth is not None and len(wealth) > 0:
+            total_return = float((wealth.iloc[-1] / initial_wealth) - 1.0)
+            wealth_array = np.insert(wealth.values, 0, initial_wealth)
+            peaks = np.maximum.accumulate(wealth_array)
+            drawdowns = (wealth_array - peaks) / peaks
+            max_drawdown = float(np.min(drawdowns))
+        else:
+            if is_log_return:
+                total_return = float(np.exp(returns_clean.sum()) - 1.0)
+                cum_wealth = np.exp(returns_clean.cumsum().values)
+            else:
+                total_return = float(np.prod(1.0 + returns_clean) - 1.0)
+                cum_wealth = np.cumprod(1.0 + returns_clean.values)
 
-        # Downside volatility for Sortino
-        negative_returns = log_returns[log_returns < 0]
-        downside_vol = float(negative_returns.std() * np.sqrt(252)) if len(negative_returns) > 0 else 1e-10
-        sortino = float((log_returns.mean() * 252) / (downside_vol + 1e-10))
+            wealth_array = np.insert(cum_wealth, 0, 1.0)
+            peaks = np.maximum.accumulate(wealth_array)
+            drawdowns = (wealth_array - peaks) / peaks
+            max_drawdown = float(np.min(drawdowns))
 
-        # Max Drawdown
-        cum_ret = np.exp(log_returns.cumsum())
-        peak = cum_ret.cummax()
-        drawdown = (cum_ret - peak) / peak
-        max_drawdown = float(drawdown.min())
+        n_periods = len(returns_clean)
+        if n_periods > 0 and total_return > -1.0:
+            ann_return = float((1.0 + total_return) ** (252.0 / n_periods) - 1.0)
+        else:
+            ann_return = -1.0
+
+        if is_log_return:
+            std_dev = returns_clean.std()
+            ann_vol = float(std_dev * np.sqrt(252))
+            mean_ret = returns_clean.mean()
+            sharpe = float((mean_ret * 252) / (ann_vol + 1e-10)) if ann_vol > 1e-8 else 0.0
+
+            neg_rets = returns_clean[returns_clean < 0]
+            downside_std = neg_rets.std() if len(neg_rets) > 1 else 0.0
+            downside_vol = float(downside_std * np.sqrt(252))
+            sortino = float((mean_ret * 252) / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
+        else:
+            std_dev = returns_clean.std()
+            ann_vol = float(std_dev * np.sqrt(252))
+            sharpe = float(ann_return / (ann_vol + 1e-10)) if ann_vol > 1e-8 else 0.0
+
+            neg_rets = returns_clean[returns_clean < 0]
+            downside_std = neg_rets.std() if len(neg_rets) > 1 else 0.0
+            downside_vol = float(downside_std * np.sqrt(252))
+            sortino = float(ann_return / (downside_vol + 1e-10)) if downside_vol > 1e-8 else 0.0
 
         total_cost = float(costs.sum()) if costs is not None else 0.0
 
@@ -44,25 +83,40 @@ class PerformanceMetrics:
         }
 
     @staticmethod
-    def block_bootstrap_sharpe_ci(log_returns: pd.Series, n_bootstraps: int = 500, block_size: int = 20) -> tuple[float, float]:
+    def block_bootstrap_sharpe_ci(
+        returns: pd.Series,
+        n_bootstraps: int = 500,
+        block_size: int = 20,
+        random_seed: Optional[int] = 42
+    ) -> Tuple[float, float]:
         """
-        Block bootstrap confidence interval for Sharpe ratio to respect time dependence.
+        Reproducible block bootstrap confidence interval for Sharpe ratio.
+        Returns (np.nan, np.nan) if sample size is insufficient.
         """
-        if len(log_returns) < block_size * 2:
-            return (0.0, 0.0)
+        if len(returns) < block_size * 2:
+            return (np.nan, np.nan)
 
-        n = len(log_returns)
+        if random_seed is not None:
+            rng = np.random.RandomState(random_seed)
+        else:
+            rng = np.random.RandomState()
+
+        clean_rets = returns.fillna(0.0).values
+        n = len(clean_rets)
         sharpes = []
 
         for _ in range(n_bootstraps):
             indices = []
             while len(indices) < n:
-                start = np.random.randint(0, n - block_size + 1)
+                start = rng.randint(0, n - block_size + 1)
                 indices.extend(range(start, start + block_size))
-            sample = log_returns.iloc[indices[:n]]
-            vol = sample.std() * np.sqrt(252)
-            sharpe = (sample.mean() * 252) / (vol + 1e-10)
-            sharpes.append(sharpe)
+            sample = clean_rets[indices[:n]]
+            std_dev = sample.std()
+            vol = std_dev * np.sqrt(252)
+            if vol < 1e-8:
+                sharpes.append(0.0)
+            else:
+                sharpes.append((sample.mean() * 252) / vol)
 
         lower_ci = float(np.percentile(sharpes, 2.5))
         upper_ci = float(np.percentile(sharpes, 97.5))
