@@ -81,13 +81,22 @@ def run_research_experiment(
                 is_log_return=False
             )
 
-            # Benchmark (buy and hold open-to-close return)
-            benchmark_engine = BacktestEngine(transaction_cost_pct=0.0000, use_log_return=False)
+            # Benchmark 1: Investable Executable Buy & Hold (incorporates realistic transaction cost on entry/exit)
+            bm_investable_engine = BacktestEngine(transaction_cost_pct=transaction_cost_pct, use_log_return=False)
             bm_signals = pd.Series(1.0, index=concat_test_df.index)
-            bm_res = benchmark_engine.run_backtest(concat_test_df, bm_signals)
+            bm_res = bm_investable_engine.run_backtest(concat_test_df, bm_signals)
             bm_metrics = PerformanceMetrics.calculate_financial_metrics(
                 returns=bm_res['Strategy_Return'],
                 wealth=bm_res['Wealth'],
+                is_log_return=False
+            )
+
+            # Benchmark 2: Frictionless Buy & Hold
+            bm_frictionless_engine = BacktestEngine(transaction_cost_pct=0.0000, use_log_return=False)
+            bm_fric_res = bm_frictionless_engine.run_backtest(concat_test_df, bm_signals)
+            bm_fric_metrics = PerformanceMetrics.calculate_financial_metrics(
+                returns=bm_fric_res['Strategy_Return'],
+                wealth=bm_fric_res['Wealth'],
                 is_log_return=False
             )
 
@@ -99,6 +108,7 @@ def run_research_experiment(
                 'gross_return': float(np.prod(1.0 + backtest_res['Gross_Return']) - 1.0),
                 'net_return': metrics['total_return'],
                 'benchmark_net_return': bm_metrics['total_return'],
+                'benchmark_frictionless_return': bm_fric_metrics['total_return'],
                 'sharpe_ratio': metrics['sharpe_ratio'],
                 'sharpe_ci': sharpe_ci,
                 'max_drawdown': metrics['max_drawdown'],
@@ -106,6 +116,40 @@ def run_research_experiment(
                 'n_observations': len(concat_test_df),
                 'data_info': fetch_info
             }
+
+            # Evaluate untouched final holdout period if available
+            holdout_df = validator.get_holdout(df_valid)
+            if holdout_df is not None and not holdout_df.empty:
+                # Train model on all walk-forward validation data
+                X_train_full, X_holdout, _ = validator.fit_transform_features(df_valid.iloc[:-validator.holdout_size], holdout_df, feature_cols)
+                y_train_full = df_valid.iloc[:-validator.holdout_size]['Target'].values
+
+                holdout_model = ModelFactory.get_model(model_type=model_type, random_state=42)
+                holdout_model.fit(X_train_full, y_train_full)
+
+                holdout_preds = holdout_model.predict(X_holdout)
+                holdout_signals = pd.Series(holdout_preds, index=holdout_df.index)
+
+                holdout_backtest = engine.run_backtest(holdout_df, holdout_signals)
+                holdout_metrics = PerformanceMetrics.calculate_financial_metrics(
+                    returns=holdout_backtest['Strategy_Return'],
+                    costs=holdout_backtest['Cost'],
+                    wealth=holdout_backtest['Wealth'],
+                    is_log_return=False
+                )
+
+                holdout_bm_signals = pd.Series(1.0, index=holdout_df.index)
+                holdout_bm_backtest = bm_investable_engine.run_backtest(holdout_df, holdout_bm_signals)
+                holdout_bm_metrics = PerformanceMetrics.calculate_financial_metrics(
+                    returns=holdout_bm_backtest['Strategy_Return'],
+                    wealth=holdout_bm_backtest['Wealth'],
+                    is_log_return=False
+                )
+
+                res_dict['holdout_net_return'] = holdout_metrics['total_return']
+                res_dict['holdout_bm_net_return'] = holdout_bm_metrics['total_return']
+                res_dict['holdout_sharpe_ratio'] = holdout_metrics['sharpe_ratio']
+                res_dict['holdout_max_drawdown'] = holdout_metrics['max_drawdown']
 
             summary_results.append(res_dict)
             print(f"    Net Return: {res_dict['net_return']:.2%}, Benchmark: {res_dict['benchmark_net_return']:.2%}, Sharpe: {res_dict['sharpe_ratio']:.2f}, CI: [{sharpe_ci[0]:.2f}, {sharpe_ci[1]:.2f}]")

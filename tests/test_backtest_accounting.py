@@ -34,3 +34,29 @@ def test_backtest_costs_applied_on_turnover_only():
     # Day 5: Continuous cash -> Turnover = 0.0 -> Cost = 0.0000
     assert res.iloc[4]['Position_Change'] == 0.0
     assert res.iloc[4]['Cost'] == 0.0000
+
+def test_missing_execution_return_resets_exposure_for_costs():
+    """
+    Test Phase A: When execution return is missing (valid_mask is False),
+    prev_exposure must reset to 0 so next position entry incurs full turnover cost.
+    """
+    dates = pd.date_range("2023-01-01", periods=4)
+    df = pd.DataFrame({
+        "Next_Executable_Return": [0.01, np.nan, 0.02, 0.01]
+    }, index=dates)
+
+    # Day 0: Signal 1 (Enter Long) -> Turnover 1.0, Cost 0.0010
+    # Day 1: Signal 1 (Missing Return) -> Skipped, position reset to 0.0
+    # Day 2: Signal 1 (Enter Long after missing return row) -> Turnover 1.0, Cost 0.0010
+    # Day 3: Signal 1 (Hold Long) -> Turnover 0.0, Cost 0.0000
+    signals = pd.Series([1, 1, 1, 1], index=dates)
+
+    engine = BacktestEngine(transaction_cost_pct=0.0010)
+    res = engine.run_backtest(df, signals)
+
+    assert abs(res.iloc[0]['Cost'] - 0.0010) < 1e-7
+    assert res.iloc[1]['Cost'] == 0.0
+    assert abs(res.iloc[2]['Position_Change'] - 1.0) < 1e-7
+    assert abs(res.iloc[2]['Cost'] - 0.0010) < 1e-7
+    assert res.iloc[3]['Position_Change'] == 0.0
+    assert res.iloc[3]['Cost'] == 0.0
