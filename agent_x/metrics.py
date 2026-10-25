@@ -93,7 +93,7 @@ class PerformanceMetrics:
         else:
             rng = np.random.RandomState()
 
-        clean_rets = returns.fillna(0.0).values
+        clean_rets = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0).values
         n = len(clean_rets)
         sharpes = []
 
@@ -105,7 +105,7 @@ class PerformanceMetrics:
             sample = clean_rets[indices[:n]]
             std_dev = sample.std()
             vol = std_dev * np.sqrt(252)
-            if vol < 1e-8:
+            if vol < 1e-8 or np.isnan(vol):
                 sharpes.append(0.0)
             else:
                 sharpes.append((sample.mean() * 252) / vol)

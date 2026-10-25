@@ -28,6 +28,18 @@ def test_financial_metrics_zero_volatility():
     assert metrics['sharpe_ratio'] == 0.0
     assert metrics['max_drawdown'] == 0.0
 
+def test_financial_metrics_inf_nan_handling():
+    dirty_returns = pd.Series([0.01, np.inf, -np.inf, np.nan, 0.02])
+    metrics = PerformanceMetrics.calculate_financial_metrics(dirty_returns)
+    assert not np.isnan(metrics['total_return'])
+    assert not np.isnan(metrics['sharpe_ratio'])
+
+def test_bootstrap_sharpe_ci_inf_nan_handling():
+    dirty_returns = pd.Series([0.01, np.inf, -np.inf, np.nan, 0.02] * 20)
+    ci = PerformanceMetrics.block_bootstrap_sharpe_ci(dirty_returns, random_seed=42)
+    assert not np.isnan(ci[0])
+    assert not np.isnan(ci[1])
+
 def test_sharpe_and_sortino_formulas():
     # Hand-crafted example:
     # returns = [0.01, -0.01, 0.02, -0.005]

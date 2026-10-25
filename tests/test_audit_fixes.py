@@ -59,7 +59,7 @@ def test_wealth_accounting_and_costs():
     # Signals: Day 0: Cash (0), Day 1: Enter Long (1), Day 2: Hold Long (1), Day 3: Exit to Cash (0), Day 4: Cash (0)
     signals = pd.Series([0, 1, 1, 0, 0], index=dates)
 
-    engine = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=100.0, use_log_return=False)
+    engine = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=100.0, use_log_return=False, execution_convention="close_to_close")
     res = engine.run_backtest(df, signals)
 
     # Day 0: Cash (0) -> No cost, wealth = 100.0
@@ -111,8 +111,8 @@ def test_investable_benchmark_costs_deducted():
 
     signals = pd.Series([1.0, 1.0, 1.0], index=dates)
 
-    engine_investable = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=1.0)
-    engine_frictionless = BacktestEngine(transaction_cost_pct=0.0000, initial_wealth=1.0)
+    engine_investable = BacktestEngine(transaction_cost_pct=0.0010, initial_wealth=1.0, execution_convention="close_to_close")
+    engine_frictionless = BacktestEngine(transaction_cost_pct=0.0000, initial_wealth=1.0, execution_convention="close_to_close")
 
     res_inv = engine_investable.run_backtest(df, signals)
     res_fric = engine_frictionless.run_backtest(df, signals)

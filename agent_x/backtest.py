@@ -21,13 +21,15 @@ class BacktestEngine:
         slippage_pct: float = 0.0000,
         fixed_commission: float = 0.0,
         initial_wealth: float = 1.0,
-        use_log_return: bool = False
+        use_log_return: bool = False,
+        execution_convention: str = "open_to_close"
     ):
         self.transaction_cost_pct = transaction_cost_pct
         self.slippage_pct = slippage_pct
         self.fixed_commission = fixed_commission
         self.initial_wealth = initial_wealth
         self.use_log_return = use_log_return
+        self.execution_convention = execution_convention
 
     def run_backtest(
         self,
@@ -94,17 +96,27 @@ class BacktestEngine:
             else:
                 simple_r_exec = float(r_exec)
 
-            # Turnover based on change in target exposure
-            pos_change = abs(target_exposure - prev_exposure)
-            position_changes[i] = pos_change
-
-            if pos_change > 1e-6:
-                trades[i] = 1
-
             total_cost_pct = self.transaction_cost_pct + self.slippage_pct
 
-            # Cost in portfolio wealth units
-            trade_cost = (pos_change * total_cost_pct * current_wealth) + (self.fixed_commission if pos_change > 1e-6 else 0.0)
+            if self.execution_convention == "open_to_close":
+                # Each active session signal is entered at Open and exited at Close.
+                # Round-trip trade entry + exit costs apply for active exposure in session t+1.
+                if abs(target_exposure) > 1e-6:
+                    # Entry + exit roundtrip cost on session target exposure
+                    pos_change = 2.0 * abs(target_exposure)
+                    trades[i] = 1
+                    trade_cost = (pos_change * total_cost_pct * current_wealth) + (2.0 * self.fixed_commission)
+                else:
+                    pos_change = 0.0
+                    trade_cost = 0.0
+            else:
+                # Close-to-Close continuous holding mode: turnover costs on net exposure changes
+                pos_change = abs(target_exposure - prev_exposure)
+                if pos_change > 1e-6:
+                    trades[i] = 1
+                trade_cost = (pos_change * total_cost_pct * current_wealth) + (self.fixed_commission if pos_change > 1e-6 else 0.0)
+
+            position_changes[i] = pos_change
             costs[i] = trade_cost / current_wealth if current_wealth > 0 else 0.0
 
             gross_r = target_exposure * simple_r_exec
