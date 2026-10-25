@@ -154,7 +154,13 @@ def run_research_experiment(
             summary_results.append(res_dict)
             print(f"    Net Return: {res_dict['net_return']:.2%}, Benchmark: {res_dict['benchmark_net_return']:.2%}, Sharpe: {res_dict['sharpe_ratio']:.2f}, CI: [{sharpe_ci[0]:.2f}, {sharpe_ci[1]:.2f}]")
 
-    report_path = tracker.generate_markdown_report(summary_results, exp_name="Verified_Agent_X_Audit", commit_sha="6780e98c242dd73da8f5063344024cf79b4ab331")
+    try:
+        import subprocess
+        commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+    except Exception:
+        commit_sha = "UNKNOWN_COMMIT"
+
+    report_path = tracker.generate_markdown_report(summary_results, exp_name="Verified_Agent_X_Audit", commit_sha=commit_sha)
     json_path = tracker.save_experiment({"results": summary_results}, exp_name="Verified_Agent_X_Audit")
 
     print(f"\nExperiment complete. Markdown report saved to: {report_path}")
