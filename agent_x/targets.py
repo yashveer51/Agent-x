@@ -20,7 +20,7 @@ class TargetBuilder:
     def add_directional_target(
         df: pd.DataFrame,
         execution_convention: str = "open_to_close",
-        use_log_return: bool = True
+        use_log_return: bool = False
     ) -> pd.DataFrame:
         """
         Calculates future return for execution on day t+1 and creates binary target label.

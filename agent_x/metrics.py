@@ -23,15 +23,31 @@ class PerformanceMetrics:
         if len(returns) == 0:
             return {}
 
-        returns_clean = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        # Filter out NaN/inf values explicitly rather than treating missing periods as 0.0 return
+        returns_clean = returns.replace([np.inf, -np.inf], np.nan).dropna()
+
+        if len(returns_clean) == 0:
+            return {
+                'total_return': 0.0,
+                'annualized_return': 0.0,
+                'annualized_volatility': 0.0,
+                'sharpe_ratio': 0.0,
+                'sortino_ratio': 0.0,
+                'max_drawdown': 0.0,
+                'total_costs': 0.0
+            }
 
         if wealth is not None and len(wealth) > 0:
-            wealth_clean = wealth.replace([np.inf, -np.inf], np.nan).fillna(initial_wealth)
-            total_return = float((wealth_clean.iloc[-1] / initial_wealth) - 1.0)
-            wealth_array = np.insert(wealth_clean.values, 0, initial_wealth)
-            peaks = np.maximum.accumulate(wealth_array)
-            drawdowns = (wealth_array - peaks) / peaks
-            max_drawdown = float(np.min(drawdowns))
+            wealth_clean = wealth.replace([np.inf, -np.inf], np.nan).dropna()
+            if len(wealth_clean) == 0:
+                total_return = 0.0
+                max_drawdown = 0.0
+            else:
+                total_return = float((wealth_clean.iloc[-1] / initial_wealth) - 1.0)
+                wealth_array = np.insert(wealth_clean.values, 0, initial_wealth)
+                peaks = np.maximum.accumulate(wealth_array)
+                drawdowns = (wealth_array - peaks) / peaks
+                max_drawdown = float(np.min(drawdowns))
         else:
             if is_log_return:
                 total_return = float(np.exp(returns_clean.sum()) - 1.0)
@@ -93,8 +109,10 @@ class PerformanceMetrics:
         else:
             rng = np.random.RandomState()
 
-        clean_rets = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0).values
+        clean_rets = returns.replace([np.inf, -np.inf], np.nan).dropna().values
         n = len(clean_rets)
+        if n < block_size * 2:
+            return (np.nan, np.nan)
         sharpes = []
 
         for _ in range(n_bootstraps):

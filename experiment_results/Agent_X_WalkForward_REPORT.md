@@ -1,6 +1,6 @@
 # Agent X Quantitative Research Report: Agent_X_WalkForward
 
-**Generated Date**: 2026-10-25 05:48:25
+**Generated Date**: 2026-10-25 06:01:18
 
 ## Executive Summary
 
@@ -10,9 +10,9 @@ Agent X evaluates machine learning stock predictions using chronological walk-fo
 
 | Asset | Model | Gross Return | Net Return | Benchmark Net (Executable) | Benchmark Frictionless | Sharpe Ratio | Sharpe 95% CI | Max Drawdown | Total Costs |
 |---|---|---|---|---|---|---|---|---|---|
-| AAPL | Random Forest | 60.65% | -59.48% | 0.00% | 0.00% | -1.00 | [-2.14, -0.11] | -62.98% | 1.3760 |
-| MSFT | Random Forest | 10.25% | -64.99% | 0.00% | 0.00% | -1.37 | [-2.39, -0.57] | -67.66% | 1.1460 |
-| SPY | Random Forest | 22.13% | -71.05% | 0.00% | 0.00% | -2.45 | [-3.51, -1.78] | -72.62% | 1.4380 |
+| AAPL | Random Forest | 76.65% | -55.44% | 0.00% | 0.00% | -0.88 | [-2.03, -0.00] | -59.73% | 1.3760 |
+| MSFT | Random Forest | 18.63% | -62.33% | 0.00% | 0.00% | -1.26 | [-2.30, -0.46] | -65.30% | 1.1460 |
+| SPY | Random Forest | 26.45% | -70.02% | 0.00% | 0.00% | -2.38 | [-3.46, -1.70] | -71.67% | 1.4380 |
 
 ## Audit & Research Conclusion
 
