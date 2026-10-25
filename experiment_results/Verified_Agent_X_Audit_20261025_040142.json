@@ -1,0 +1,202 @@
+{
+  "results": [
+    {
+      "symbol": "AAPL",
+      "model": "random_forest",
+      "gross_return": 0.7665458378298873,
+      "net_return": 0.34432166131522024,
+      "benchmark_net_return": 1.1391842221266772,
+      "sharpe_ratio": 0.37983730950015304,
+      "sharpe_ci": [
+        -0.6539900553517463,
+        1.4154340250445876
+      ],
+      "max_drawdown": -0.24811808215518474,
+      "total_costs": 0.273,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "AAPL",
+      "model": "logistic_regression",
+      "gross_return": 1.0012603027407345,
+      "net_return": 0.5819520435528753,
+      "benchmark_net_return": 1.1391842221266772,
+      "sharpe_ratio": 0.6533151691542655,
+      "sharpe_ci": [
+        -0.4460432022207793,
+        1.674365587534886
+      ],
+      "max_drawdown": -0.23010443923956272,
+      "total_costs": 0.235,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "AAPL",
+      "model": "majority_class",
+      "gross_return": 1.1391842221266772,
+      "net_return": 1.1370450379045454,
+      "benchmark_net_return": 1.1391842221266772,
+      "sharpe_ratio": 0.9359729712009205,
+      "sharpe_ci": [
+        -0.22863097997746162,
+        2.074066407347566
+      ],
+      "max_drawdown": -0.2983659104064382,
+      "total_costs": 0.001,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/AAPL_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "model": "random_forest",
+      "gross_return": 0.18630859952774736,
+      "net_return": -0.05660301846676585,
+      "benchmark_net_return": 0.5056274752346661,
+      "sharpe_ratio": -0.08068033928874263,
+      "sharpe_ci": [
+        -0.9148767959657964,
+        0.8147096620628901
+      ],
+      "max_drawdown": -0.3684935017998304,
+      "total_costs": 0.229,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "model": "logistic_regression",
+      "gross_return": 0.522891271776138,
+      "net_return": 0.19660705777566556,
+      "benchmark_net_return": 0.5056274752346661,
+      "sharpe_ratio": 0.2659851258795471,
+      "sharpe_ci": [
+        -0.68898176085882,
+        1.1960513837821625
+      ],
+      "max_drawdown": -0.4229321593131037,
+      "total_costs": 0.241,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "model": "majority_class",
+      "gross_return": 0.5056274752346661,
+      "net_return": 0.5041218477594309,
+      "benchmark_net_return": 0.5056274752346661,
+      "sharpe_ratio": 0.5065114845526193,
+      "sharpe_ci": [
+        -0.2885807095821956,
+        1.4172060905438337
+      ],
+      "max_drawdown": -0.287685257131107,
+      "total_costs": 0.001,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/MSFT_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "SPY",
+      "model": "random_forest",
+      "gross_return": 0.325429268332567,
+      "net_return": 0.15565564088912187,
+      "benchmark_net_return": 0.25053062303991225,
+      "sharpe_ratio": 0.2899052654089088,
+      "sharpe_ci": [
+        -0.6957252681126026,
+        1.2261851274213482
+      ],
+      "max_drawdown": -0.19804378909947498,
+      "total_costs": 0.137,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "SPY",
+      "model": "logistic_regression",
+      "gross_return": 0.1869438893321531,
+      "net_return": 0.049506761119714415,
+      "benchmark_net_return": 0.25053062303991225,
+      "sharpe_ratio": 0.09250582567700971,
+      "sharpe_ci": [
+        -0.7275822708631091,
+        0.9776081848256363
+      ],
+      "max_drawdown": -0.17172155744413048,
+      "total_costs": 0.123,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    },
+    {
+      "symbol": "SPY",
+      "model": "majority_class",
+      "gross_return": 0.25053062303991225,
+      "net_return": 0.24928009241686855,
+      "benchmark_net_return": 0.25053062303991225,
+      "sharpe_ratio": 0.41083412456778395,
+      "sharpe_ci": [
+        -0.4388584373380391,
+        1.3206705519641553
+      ],
+      "max_drawdown": -0.14349115033003712,
+      "total_costs": 0.001,
+      "n_observations": 875,
+      "data_info": {
+        "data_source": "fresh_download",
+        "cache_file": ".data_cache/SPY_2018-01-01_2024-12-31.csv",
+        "min_date": "2018-01-02",
+        "max_date": "2024-12-30",
+        "n_observations": 1760
+      }
+    }
+  ]
+}
